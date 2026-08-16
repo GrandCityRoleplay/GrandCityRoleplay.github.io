@@ -1,6 +1,4 @@
 // Grand City Roleplay website configuration.
-// Replace the placeholder URLs below with your real links.
-// Keep each URL as a normal https:// link.
 const GCRP = {
   links: {
     game: "#game-coming-soon",
@@ -9,6 +7,11 @@ const GCRP = {
     candidate2: "https://discord.gg/FUmSkeZR9",
     org1: "https://discord.gg/bdNXmpEkX",
     org2: "https://discord.gg/XnPeKCuRh",
+  },
+
+  supabase: {
+    url: "https://vjvgvjdmwtmpefuwxtun.supabase.co",
+    key: "sb_publishable_Ev-ZZXUY3oY9rbkMHH65Dw_ashMFtNe"
   }
 };
 
@@ -20,6 +23,7 @@ document.querySelectorAll("[data-link]").forEach((el) => {
 // Mobile navigation
 const menu = document.querySelector(".menu-toggle");
 const nav = document.querySelector("nav");
+
 if (menu) {
   menu.addEventListener("click", () => {
     const open = nav.style.display === "flex";
@@ -36,7 +40,10 @@ if (menu) {
 }
 
 // Small reveal animation
-const revealItems = document.querySelectorAll(".feature-grid article,.server-card,.org-card,.rules-grid article,.news-card");
+const revealItems = document.querySelectorAll(
+  ".feature-grid article,.server-card,.org-card,.rules-grid article,.news-card"
+);
+
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -50,6 +57,62 @@ const observer = new IntersectionObserver((entries) => {
 revealItems.forEach(el => {
   el.style.opacity = "0";
   el.style.transform = "translateY(16px)";
-  el.style.transition = "opacity .6s ease, transform .6s ease, border-color .3s ease";
+  el.style.transition =
+    "opacity .6s ease, transform .6s ease, border-color .3s ease";
   observer.observe(el);
 });
+
+// ==========================================
+// GCRP STAFF — SUPABASE
+// ==========================================
+
+async function loadGCRPStaff() {
+  const container = document.querySelector("#staff-list");
+
+  if (!container) return;
+
+  try {
+    const response = await fetch(
+      `${GCRP.supabase.url}/rest/v1/staff?select=position,active,profiles(username,display_name)&active=eq.true&order=created_at.asc`,
+      {
+        headers: {
+          "apikey": GCRP.supabase.key,
+          "Authorization": `Bearer ${GCRP.supabase.key}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.status}`);
+    }
+
+    const staff = await response.json();
+
+    if (staff.length === 0) {
+      container.innerHTML = "<p>No active staff members found.</p>";
+      return;
+    }
+
+    container.innerHTML = staff.map(member => {
+      const name =
+        member.profiles?.display_name ||
+        member.profiles?.username ||
+        "GCRP Staff";
+
+      return `
+        <div class="staff-card">
+          <h3>${name}</h3>
+          <p>${member.position}</p>
+          <span>🟢 Active</span>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("GCRP Staff loading failed:", error);
+    container.innerHTML =
+      "<p>Unable to load staff information.</p>";
+  }
+}
+
+loadGCRPStaff();
