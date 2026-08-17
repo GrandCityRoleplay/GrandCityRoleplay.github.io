@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Complaint | GCRP</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header class="navbar">
+    <a class="brand" href="index.html">
+      <img src="assets/gcrp-logo.png" alt="Grand City Roleplay logo">
+      <span>GRAND CITY<br><small>ROLEPLAY</small></span>
+    </a>
+
+    <a href="index.html">← Back to Website</a>
+  </header>
+
+  <main class="section" style="max-width:900px;margin:80px auto;">
+
+    <div class="section-heading">
+      <span>GCRP SUPPORT</span>
+      <h2>SUBMIT A COMPLAINT</h2>
+    </div>
+
+    <p>
+      Submit a complaint to the Grand City Roleplay administration team.
+      Please provide accurate information and keep your complaint respectful.
+    </p>
+
+    <form id="complaint-form">
+
+      <label for="subject">Subject</label>
+
+      <input
+        id="subject"
+        type="text"
+        maxlength="120"
+        placeholder="Complaint subject"
+        required
+      >
+
+      <label for="message">Complaint</label>
+
+      <textarea
+        id="message"
+        rows="8"
+        maxlength="5000"
+        placeholder="Explain your complaint..."
+        required
+      ></textarea>
+
+      <button class="btn primary" type="submit">
+        Submit Complaint
+      </button>
+
+      <p id="complaint-status"></p>
+
+    </form>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="submit-complaint.js"></script>
+
+</body>
+</html>
