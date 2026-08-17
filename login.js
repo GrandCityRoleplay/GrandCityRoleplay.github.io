@@ -47,3 +47,48 @@ form.addEventListener("submit", async (event) => {
     message.textContent = error.message;
   }
 });
+const forgotPassword = document.getElementById("forgot-password");
+
+if (forgotPassword) {
+  forgotPassword.addEventListener("click", async (event) => {
+    event.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+
+    if (!email) {
+      message.textContent = "Enter your email first.";
+      return;
+    }
+
+    message.textContent = "Sending recovery email...";
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/auth/v1/recover`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY
+          },
+          body: JSON.stringify({
+            email,
+            redirect_to:
+              "https://grandcityroleplay.github.io/reset-password.html"
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.msg || data.message || "Could not send recovery email.");
+      }
+
+      message.textContent =
+        "Recovery email sent! Check your inbox.";
+    } catch (error) {
+      console.error(error);
+      message.textContent = error.message;
+    }
+  });
+}
