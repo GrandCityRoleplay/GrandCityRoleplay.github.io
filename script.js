@@ -161,7 +161,10 @@ async function checkGCRPAdmin() {
       }
     );
 
-    if (!response.ok) return;
+    if (!response.ok) {
+  alert("GCRP DEBUG: Auth token is not being accepted.");
+  return;
+    }
 
     const user = await response.json();
 
@@ -175,10 +178,14 @@ async function checkGCRPAdmin() {
       }
     );
 
-    if (!profileResponse.ok) return;
+    if (!profileResponse.ok) {
+  alert("GCRP DEBUG: Profile request failed.");
+  return;
+    }
 
     const profiles = await profileResponse.json();
     const role = profiles[0]?.role;
+    alert("GCRP DEBUG: Your profile role is: " + role);
 
     if (["owner", "chief_admin", "admin"].includes(role)) {
       adminLink.style.display = "";
