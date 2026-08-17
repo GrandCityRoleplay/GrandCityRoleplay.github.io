@@ -100,12 +100,14 @@ async function loadGCRPStaff() {
         "GCRP Staff";
 
       return `
-        <div class="staff-card">
-          <h3>${name}</h3>
-          <p>${member.position}</p>
-          <span>🟢 Active</span>
-        </div>
-      `;
+  <div class="staff-card"
+       data-name="${name}"
+       data-position="${member.position}">
+    <h3>${name}</h3>
+    <p>${member.position}</p>
+    <span>🟢 Active</span>
+  </div>
+`;
     }).join("");
 
   } catch (error) {
@@ -116,3 +118,29 @@ async function loadGCRPStaff() {
 }
 
 loadGCRPStaff();
+
+document.addEventListener("click", (event) => {
+  const card = event.target.closest(".staff-card");
+  const profile = document.querySelector("#staff-profile");
+  const content = document.querySelector("#staff-profile-content");
+
+  if (!card || !profile || !content) return;
+
+  content.innerHTML = `
+    <h2>${card.dataset.name}</h2>
+    <p><strong>Position:</strong> ${card.dataset.position}</p>
+    <p><strong>Status:</strong> 🟢 Active</p>
+  `;
+
+  profile.hidden = false;
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target.id === "close-staff-profile") {
+    const profile = document.querySelector("#staff-profile");
+
+    if (profile) {
+      profile.hidden = true;
+    }
+  }
+});
