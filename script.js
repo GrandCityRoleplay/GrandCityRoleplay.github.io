@@ -144,3 +144,49 @@ document.addEventListener("click", (event) => {
     }
   }
 });
+async function checkGCRPAdmin() {
+  const token = localStorage.getItem("gcrp_access_token");
+  const adminLink = document.querySelector("#admin-link");
+
+  if (!token || !adminLink) return;
+
+  try {
+    const response = await fetch(
+      `${GCRP.supabase.url}/auth/v1/user`,
+      {
+        headers: {
+          "apikey": GCRP.supabase.key,
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!response.ok) return;
+
+    const user = await response.json();
+
+    const profileResponse = await fetch(
+      `${GCRP.supabase.url}/rest/v1/profiles?id=eq.${user.id}&select=role`,
+      {
+        headers: {
+          "apikey": GCRP.supabase.key,
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!profileResponse.ok) return;
+
+    const profiles = await profileResponse.json();
+    const role = profiles[0]?.role;
+
+    if (["owner", "chief_admin", "admin"].includes(role)) {
+      adminLink.style.display = "";
+    }
+
+  } catch (error) {
+    console.error("GCRP admin check failed:", error);
+  }
+}
+
+checkGCRPAdmin();
