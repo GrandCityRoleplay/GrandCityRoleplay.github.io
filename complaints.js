@@ -1,4 +1,4 @@
-const SUPABASE_URL = "https://vjvgvjdmwtmpefuwxtun.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://vjvgvjdmwtmpefuwxtun.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ev-ZZXUY3oY9rbkMHH65Dw_ashMFtNe";
 
 const supabaseClient = window.supabase.createClient(
@@ -15,9 +15,11 @@ async function loadComplaints() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error(error);
-    container.innerHTML =
-      "<p>❌ Unable to load complaints.</p>";
+    console.error("Supabase error:", error);
+    container.innerHTML = `
+      <p>❌ Unable to load complaints.</p>
+      <p>${escapeHtml(error.message)}</p>
+    `;
     return;
   }
 
