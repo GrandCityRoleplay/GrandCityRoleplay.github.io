@@ -15,18 +15,31 @@ const GCRP = {
   }
 };
 
+
+// ==========================================
+// GCRP LINKS
+// ==========================================
+
 document.querySelectorAll("[data-link]").forEach((el) => {
   const key = el.dataset.link;
-  if (GCRP.links[key]) el.href = GCRP.links[key];
+
+  if (GCRP.links[key]) {
+    el.href = GCRP.links[key];
+  }
 });
 
-// Mobile navigation
+
+// ==========================================
+// MOBILE NAVIGATION
+// ==========================================
+
 const menu = document.querySelector(".menu-toggle");
 const nav = document.querySelector("nav");
 
 if (menu) {
   menu.addEventListener("click", () => {
     const open = nav.style.display === "flex";
+
     nav.style.display = open ? "" : "flex";
     nav.style.flexDirection = "column";
     nav.style.position = "absolute";
@@ -39,7 +52,11 @@ if (menu) {
   });
 }
 
-// Small reveal animation
+
+// ==========================================
+// SMALL REVEAL ANIMATION
+// ==========================================
+
 const revealItems = document.querySelectorAll(
   ".feature-grid article,.server-card,.org-card,.rules-grid article,.news-card"
 );
@@ -59,19 +76,23 @@ revealItems.forEach(el => {
   el.style.transform = "translateY(16px)";
   el.style.transition =
     "opacity .6s ease, transform .6s ease, border-color .3s ease";
+
   observer.observe(el);
 });
+
 
 // ==========================================
 // GCRP STAFF — SUPABASE
 // ==========================================
 
 async function loadGCRPStaff() {
+
   const container = document.querySelector("#staff-list");
 
   if (!container) return;
 
   try {
+
     const response = await fetch(
       `${GCRP.supabase.url}/rest/v1/staff?select=position,active,profiles(username,display_name)&active=eq.true&order=created_at.asc`,
       {
@@ -89,29 +110,43 @@ async function loadGCRPStaff() {
     const staff = await response.json();
 
     if (staff.length === 0) {
-      container.innerHTML = "<p>No active staff members found.</p>";
+
+      container.innerHTML =
+        "<p>No active staff members found.</p>";
+
       return;
     }
 
     container.innerHTML = staff.map(member => {
+
       const name =
         member.profiles?.display_name ||
         member.profiles?.username ||
         "GCRP Staff";
 
       return `
-  <div class="staff-card"
-       data-name="${name}"
-       data-position="${member.position}">
-    <h3>${name}</h3>
-    <p>${member.position}</p>
-    <span>🟢 Active</span>
-  </div>
-`;
+        <div class="staff-card"
+             data-name="${name}"
+             data-position="${member.position}">
+
+          <h3>${name}</h3>
+
+          <p>${member.position}</p>
+
+          <span>🟢 Active</span>
+
+        </div>
+      `;
+
     }).join("");
 
   } catch (error) {
-    console.error("GCRP Staff loading failed:", error);
+
+    console.error(
+      "GCRP Staff loading failed:",
+      error
+    );
+
     container.innerHTML =
       "<p>Unable to load staff information.</p>";
   }
@@ -119,81 +154,180 @@ async function loadGCRPStaff() {
 
 loadGCRPStaff();
 
+
+// ==========================================
+// STAFF PROFILE
+// ==========================================
+
 document.addEventListener("click", (event) => {
+
   const card = event.target.closest(".staff-card");
-  const profile = document.querySelector("#staff-profile");
-  const content = document.querySelector("#staff-profile-content");
+
+  const profile =
+    document.querySelector("#staff-profile");
+
+  const content =
+    document.querySelector("#staff-profile-content");
 
   if (!card || !profile || !content) return;
 
   content.innerHTML = `
     <h2>${card.dataset.name}</h2>
-    <p><strong>Position:</strong> ${card.dataset.position}</p>
-    <p><strong>Status:</strong> 🟢 Active</p>
+
+    <p>
+      <strong>Position:</strong>
+      ${card.dataset.position}
+    </p>
+
+    <p>
+      <strong>Status:</strong>
+      🟢 Active
+    </p>
   `;
 
   profile.hidden = false;
 });
 
+
 document.addEventListener("click", (event) => {
+
   if (event.target.id === "close-staff-profile") {
-    const profile = document.querySelector("#staff-profile");
+
+    const profile =
+      document.querySelector("#staff-profile");
 
     if (profile) {
       profile.hidden = true;
     }
   }
 });
-async function checkGCRPAdmin() {
-  const token = localStorage.getItem("gcrp_access_token");
-  const adminLink = document.querySelector("#admin-link");
 
-  if (!token || !adminLink) return;
+
+// ==========================================
+// GCRP ADMIN ACCESS
+// ==========================================
+
+async function checkGCRPAdmin() {
+
+  const adminLink =
+    document.querySelector("#admin-link");
+
+  if (!adminLink) return;
 
   try {
-    const response = await fetch(
-      `${GCRP.supabase.url}/auth/v1/user`,
-      {
-        headers: {
-          "apikey": GCRP.supabase.key,
-          "Authorization": `Bearer ${token}`
-        }
-      }
-    );
 
-    if (!response.ok) {
-  alert("GCRP DEBUG: Auth token is not being accepted.");
-  return;
+    // Make sure Supabase library is available.
+    if (!window.supabase) {
+
+      console.error(
+        "Supabase JavaScript library is not loaded."
+      );
+
+      return;
     }
 
-    const user = await response.json();
+    const supabaseClient =
+      window.supabase.createClient(
+        GCRP.supabase.url,
+        GCRP.supabase.key
+      );
 
-    const profileResponse = await fetch(
-      `${GCRP.supabase.url}/rest/v1/profiles?id=eq.${user.id}&select=role`,
-      {
-        headers: {
-          "apikey": GCRP.supabase.key,
-          "Authorization": `Bearer ${token}`
-        }
-      }
-    );
 
-    if (!profileResponse.ok) {
-  alert("GCRP DEBUG: Profile request failed.");
-  return;
+    // Get the currently logged-in user.
+    const {
+      data: { session },
+      error: sessionError
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (sessionError) {
+
+      console.error(
+        "GCRP session error:",
+        sessionError
+      );
+
+      return;
     }
 
-    const profiles = await profileResponse.json();
-    const role = profiles[0]?.role;
-    alert("GCRP DEBUG: Your profile role is: " + role);
 
-    if (["owner", "chief_admin", "admin"].includes(role)) {
+    if (!session) {
+
+      console.log(
+        "No active GCRP login session."
+      );
+
+      return;
+    }
+
+
+    const user = session.user;
+
+
+    // Get the user's role from profiles.
+    const {
+      data: profile,
+      error: profileError
+    } =
+      await supabaseClient
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+
+    if (profileError) {
+
+      console.error(
+        "GCRP profile error:",
+        profileError
+      );
+
+      return;
+    }
+
+
+    const role = profile?.role;
+
+    console.log(
+      "GCRP authenticated user:",
+      user.id
+    );
+
+    console.log(
+      "GCRP user role:",
+      role
+    );
+
+
+    // Show Admin Panel only to authorized roles.
+    if (
+      ["owner", "chief_admin", "admin"].includes(role)
+    ) {
+
       adminLink.style.display = "";
+
+      console.log(
+        "GCRP Admin Panel access granted."
+      );
+
+    } else {
+
+      console.log(
+        "GCRP Admin Panel access denied."
+      );
     }
 
   } catch (error) {
-    console.error("GCRP admin check failed:", error);
+
+    console.error(
+      "GCRP admin check failed:",
+      error
+    );
   }
 }
 
+
+// Run admin check.
 checkGCRPAdmin();
