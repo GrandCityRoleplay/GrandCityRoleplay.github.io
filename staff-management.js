@@ -6,6 +6,11 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_KEY
 );
 
+
+// ==========================================
+// LOAD STAFF
+// ==========================================
+
 async function loadStaffManagement() {
 
   const container = document.getElementById(
@@ -14,19 +19,31 @@ async function loadStaffManagement() {
 
   if (!container) return;
 
-  container.innerHTML = "<p>Loading staff members...</p>";
+  container.innerHTML =
+    "<p>Loading staff members...</p>";
 
   try {
 
-    const { data, error } = await supabaseClient
+    // Get staff records
+    const {
+      data: staff,
+      error: staffError
+    } = await supabaseClient
       .from("staff")
-      .select("*")
+      .select(
+        "user_id, position, assigned_by, active, created_at"
+      )
       .order("created_at", {
         ascending: true
       });
 
-    if (error) {
-      console.error("Staff loading error:", error);
+
+    if (staffError) {
+
+      console.error(
+        "Staff loading error:",
+        staffError
+      );
 
       container.innerHTML =
         "<p>❌ Unable to load staff members.</p>";
@@ -34,7 +51,8 @@ async function loadStaffManagement() {
       return;
     }
 
-    if (!data || data.length === 0) {
+
+    if (!staff || staff.length === 0) {
 
       container.innerHTML =
         "<p>📭 No staff members found.</p>";
@@ -42,13 +60,64 @@ async function loadStaffManagement() {
       return;
     }
 
-    container.innerHTML = data.map(staff => {
+
+    // Get profile IDs
+    const userIds = staff.map(
+      member => member.user_id
+    );
+
+
+    // Get profile information
+    const {
+      data: profiles,
+      error: profileError
+    } = await supabaseClient
+      .from("profiles")
+      .select(
+        "id, username, display_name"
+      )
+      .in("id", userIds);
+
+
+    if (profileError) {
+
+      console.error(
+        "Profile loading error:",
+        profileError
+      );
+    }
+
+
+    // Create profile lookup
+    const profileMap = {};
+
+    (profiles || []).forEach(profile => {
+
+      profileMap[profile.id] = profile;
+
+    });
+
+
+    // Display staff
+    container.innerHTML = staff.map(member => {
+
+      const profile =
+        profileMap[member.user_id];
+
+      const name =
+        profile?.display_name ||
+        profile?.username ||
+        "Unknown Staff";
+
 
       const position =
-        staff.position || "No position";
+        member.position ||
+        "No position";
+
 
       const active =
-        staff.active === true;
+        member.active === true;
+
 
       return `
         <div style="
@@ -59,8 +128,15 @@ async function loadStaffManagement() {
         ">
 
           <h2>
-            👤 ${escapeHtml(staff.user_id || "Unknown Staff")}
+            👤 ${escapeHtml(name)}
           </h2>
+
+          <p>
+            <strong>Username:</strong>
+            ${escapeHtml(
+              profile?.username || "Unknown"
+            )}
+          </p>
 
           <p>
             <strong>Position:</strong>
@@ -69,27 +145,50 @@ async function loadStaffManagement() {
 
           <p>
             <strong>Status:</strong>
-            ${active ? "🟢 Active" : "🔴 Inactive"}
-          </p>
-
-          <p>
-            <strong>Staff ID:</strong>
-            ${escapeHtml(String(staff.id || ""))}
-          </p>
-
-          <p>
-            <strong>Created:</strong>
             ${
-              staff.created_at
-                ? new Date(staff.created_at).toLocaleString()
+              active
+                ? "🟢 Active"
+                : "🔴 Inactive"
+            }
+          </p>
+
+          <p>
+            <strong>User ID:</strong>
+            ${escapeHtml(member.user_id)}
+          </p>
+
+          <p>
+            <strong>Added:</strong>
+            ${
+              member.created_at
+                ? new Date(
+                    member.created_at
+                  ).toLocaleString()
                 : "Unknown"
             }
           </p>
+
+          <button
+            onclick="toggleStaffStatus('${member.user_id}', ${active})"
+            style="
+              padding:12px 20px;
+              margin-top:10px;
+              cursor:pointer;
+              border-radius:8px;
+            "
+          >
+            ${
+              active
+                ? "🔴 Deactivate Staff"
+                : "🟢 Activate Staff"
+            }
+          </button>
 
         </div>
       `;
 
     }).join("");
+
 
   } catch (error) {
 
@@ -104,14 +203,73 @@ async function loadStaffManagement() {
 }
 
 
+// ==========================================
+// ACTIVATE / DEACTIVATE STAFF
+// ==========================================
+
+async function toggleStaffStatus(
+  userId,
+  currentStatus
+) {
+
+  const newStatus =
+    !currentStatus;
+
+
+  const {
+    error
+  } = await supabaseClient
+    .from("staff")
+    .update({
+      active: newStatus
+    })
+    .eq("user_id", userId);
+
+
+  if (error) {
+
+    console.error(
+      "Staff status update error:",
+      error
+    );
+
+    alert(
+      "❌ Could not update staff status."
+    );
+
+    return;
+  }
+
+
+  alert(
+    newStatus
+      ? "✅ Staff member activated."
+      : "🔴 Staff member deactivated."
+  );
+
+
+  loadStaffManagement();
+}
+
+
+// ==========================================
+// HTML SECURITY
+// ==========================================
+
 function escapeHtml(value) {
 
-  const div = document.createElement("div");
+  const div =
+    document.createElement("div");
 
-  div.textContent = value;
+  div.textContent =
+    value ?? "";
 
   return div.innerHTML;
 }
 
+
+// ==========================================
+// START
+// ==========================================
 
 loadStaffManagement();
