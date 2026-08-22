@@ -1,63 +1,117 @@
-const SUPABASE_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-const SUPABASE_KEY = "sb_publishable_Ev-ZZXUY3oY9rbkMHH65Dw_ashMFtNe";
+const SUPABASE_URL =
+  "https://vjvgvjdmwtmpefuwxtun.supabase.co";
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const SUPABASE_KEY =
+  "sb_publishable_Ev-ZZXUY3oY9rbkMHH65Dw_ashMFtNe";
 
-const form = document.getElementById("complaint-form");
-const statusMessage = document.getElementById("complaint-status");
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
-  statusMessage.textContent = "Submitting complaint...";
 
-  const subject = document.getElementById("subject").value.trim();
-  const message = document.getElementById("message").value.trim();
+const form =
+  document.getElementById("complaint-form");
 
-  if (!subject || !message) {
-    statusMessage.textContent = "Please complete both fields.";
-    return;
-  }
+const statusMessage =
+  document.getElementById("complaint-status");
 
-  try {
-    const {
-      data: { user },
-      error: userError
-    } = await supabaseClient.auth.getUser();
 
-    if (userError || !user) {
+if (form) {
+
+  form.addEventListener("submit", async (event) => {
+
+    event.preventDefault();
+
+    statusMessage.textContent =
+      "Submitting complaint...";
+
+
+    const subject =
+      document.getElementById("subject")
+        .value
+        .trim();
+
+    const message =
+      document.getElementById("message")
+        .value
+        .trim();
+
+
+    if (!subject || !message) {
+
       statusMessage.textContent =
-        "Please log in before submitting a complaint.";
+        "Please complete both fields.";
+
       return;
     }
 
-    const { error } = await supabaseClient
-      .from("complaints")
-      .insert({
-        citizen_id: user.id,
-        subject: subject,
-        message: message,
-        status: "pending"
-      });
 
-    if (error) {
-      console.error(error);
+    try {
+
+      const {
+        data: { user },
+        error: userError
+      } =
+        await supabaseClient.auth.getUser();
+
+
+      if (userError || !user) {
+
+        statusMessage.textContent =
+          "Please log in before submitting a complaint.";
+
+        return;
+      }
+
+
+      const {
+        error: insertError
+      } =
+        await supabaseClient
+          .from("complaints")
+          .insert({
+            citizen_id: user.id,
+            subject: subject,
+            message: message,
+            status: "pending"
+          });
+
+
+      if (insertError) {
+
+        console.error(
+          "Complaint submission error:",
+          insertError
+        );
+
+        statusMessage.textContent =
+          "❌ Unable to submit complaint.";
+
+        return;
+      }
+
+
       statusMessage.textContent =
-        "Unable to submit complaint. Please try again.";
-      return;
+        "✅ Complaint submitted successfully!";
+
+
+      form.reset();
+
+
+    } catch (error) {
+
+      console.error(
+        "Complaint error:",
+        error
+      );
+
+      statusMessage.textContent =
+        "❌ Something went wrong. Please try again.";
     }
 
-    statusMessage.textContent =
-      "✅ Complaint submitted successfully!";
+  });
 
-    form.reset();
-
-  } catch (error) {
-    console.error(error);
-    statusMessage.textContent =
-      "Something went wrong. Please try again.";
-  }
-});
+    }
