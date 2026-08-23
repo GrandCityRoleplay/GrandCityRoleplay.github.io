@@ -38,7 +38,11 @@ async function loadUsers() {
       });
 
     if (error) {
-      console.error("User loading error:", error);
+
+      console.error(
+        "User loading error:",
+        error
+      );
 
       select.innerHTML =
         '<option value="">Unable to load users</option>';
@@ -121,16 +125,13 @@ async function addStaffMember() {
   message.textContent =
     "Adding staff member...";
 
-
   try {
 
-    // Get currently logged-in user
     const {
       data: { user },
       error: userError
     } =
       await supabaseClient.auth.getUser();
-
 
     if (userError || !user) {
 
@@ -143,7 +144,6 @@ async function addStaffMember() {
     }
 
 
-    // Check whether the user is already staff
     const {
       data: existingStaff,
       error: existingError
@@ -181,7 +181,6 @@ async function addStaffMember() {
     }
 
 
-    // Add the user as Moderator by default
     const {
       error: insertError
     } =
@@ -290,7 +289,6 @@ async function loadStaffManagement() {
     }
 
 
-    // Get profile IDs
     const userIds =
       staff.map(
         member => member.user_id
@@ -351,6 +349,11 @@ async function loadStaffManagement() {
           member.active === true;
 
 
+        // Owner protection
+        const isOwner =
+          member.position === "Owner";
+
+
         return `
           <div style="
             margin:20px 0;
@@ -394,11 +397,3 @@ async function loadStaffManagement() {
               ${
                 member.created_at
                   ? new Date(
-                      member.created_at
-                    ).toLocaleString()
-                  : "Unknown"
-              }
-            </p>
-
-            <button
-              onclick="toggleStaffStatus
