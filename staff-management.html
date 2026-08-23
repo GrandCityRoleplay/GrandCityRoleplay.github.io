@@ -20,6 +20,7 @@
     <a href="admin.html">← Back to Admin Panel</a>
   </header>
 
+
   <main style="max-width:1100px;margin:80px auto;padding:20px;">
 
     <p style="color:#00bfff;letter-spacing:4px;">
@@ -29,16 +30,82 @@
     <h1>👥 Staff Management</h1>
 
     <p>
-      View and manage current GCRP staff members.
+      Add, activate, deactivate and manage GCRP staff members.
     </p>
 
-    <div id="staff-management-list">
 
-      <p>Loading staff members...</p>
+    <!-- ==========================================
+         ADD STAFF
+    =========================================== -->
+
+    <div style="
+      margin-top:35px;
+      padding:30px;
+      border:1px solid rgba(0,191,255,.4);
+      border-radius:18px;
+    ">
+
+      <h2>➕ Add Staff Member</h2>
+
+      <p>
+        Select a registered GCRP user to add to the staff team.
+      </p>
+
+      <select
+        id="user-select"
+        style="
+          width:100%;
+          padding:14px;
+          margin-top:15px;
+          border-radius:10px;
+        "
+      >
+        <option value="">
+          Loading users...
+        </option>
+      </select>
+
+
+      <button
+        id="add-staff-button"
+        style="
+          margin-top:20px;
+          padding:14px 25px;
+          border:none;
+          border-radius:10px;
+          cursor:pointer;
+        "
+      >
+        ➕ Add to Staff
+      </button>
+
+
+      <p
+        id="staff-management-message"
+        style="margin-top:20px;"
+      ></p>
+
+    </div>
+
+
+    <!-- ==========================================
+         CURRENT STAFF
+    =========================================== -->
+
+    <div style="margin-top:45px;">
+
+      <h2>👥 Current Staff</h2>
+
+      <div id="staff-management-list">
+
+        <p>Loading staff members...</p>
+
+      </div>
 
     </div>
 
   </main>
+
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -46,4 +113,4 @@
   <script src="staff-management.js"></script>
 
 </body>
-</html>
+  </html>
