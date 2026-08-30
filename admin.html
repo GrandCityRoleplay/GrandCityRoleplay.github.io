@@ -20,6 +20,7 @@
     <a href="index.html">← Back to Website</a>
   </header>
 
+
   <main style="max-width:1100px;margin:80px auto;padding:20px;">
 
     <p style="color:#00bfff;letter-spacing:4px;">
@@ -28,72 +29,127 @@
 
     <h1>Admin Panel 👑</h1>
 
-    <p>
-      Welcome to the Grand City Roleplay management dashboard.
+    <p id="welcome-message">
+      Checking administrator access...
     </p>
+
+
+    <!-- DASHBOARD STATS -->
+
+    <div class="dashboard-stats">
+
+      <div class="stat-card">
+        <span>👥</span>
+        <h2 id="staff-count">...</h2>
+        <p>Active Staff</p>
+      </div>
+
+      <div class="stat-card">
+        <span>📋</span>
+        <h2 id="complaint-count">...</h2>
+        <p>Total Complaints</p>
+      </div>
+
+      <div class="stat-card">
+        <span>⏳</span>
+        <h2 id="pending-count">...</h2>
+        <p>Pending Complaints</p>
+      </div>
+
+      <div class="stat-card">
+        <span>🔗</span>
+        <h2 id="server-count">...</h2>
+        <p>Server Links</p>
+      </div>
+
+    </div>
+
+
+    <!-- ADMIN SECTIONS -->
 
     <div class="admin-grid">
 
-      <!-- COMPLAINTS -->
       <button class="admin-card"
               onclick="location.href='complaints.html'">
+
         <span>📋</span>
+
         <h2>Complaints</h2>
-        <p>View and manage player complaints.</p>
+
+        <p>
+          View and manage player complaints.
+        </p>
+
       </button>
 
 
-      <!-- STAFF MANAGEMENT -->
       <button class="admin-card"
               onclick="location.href='staff-management.html'">
+
         <span>👥</span>
+
         <h2>Staff Management</h2>
-        <p>View and manage GCRP staff members.</p>
+
+        <p>
+          Add, edit and manage GCRP staff members.
+        </p>
+
       </button>
 
 
-      <!-- GIVE POWER -->
       <button class="admin-card"
               onclick="location.href='permissions.html'">
+
         <span>👑</span>
+
         <h2>Give Power</h2>
-        <p>Promote staff and manage positions.</p>
+
+        <p>
+          Promote staff and manage positions.
+        </p>
+
       </button>
 
 
-      <!-- SERVER LINKS -->
       <button class="admin-card"
               onclick="location.href='server-links.html'">
+
         <span>🔗</span>
+
         <h2>Server Links</h2>
-        <p>Manage connected servers and links.</p>
+
+        <p>
+          Manage connected servers and links.
+        </p>
+
       </button>
 
     </div>
 
 
-    <div style="
-      margin-top:40px;
-      padding:30px;
-      border:1px solid rgba(0,191,255,.5);
-      border-radius:18px;
-    ">
+    <!-- ACCESS STATUS -->
 
-      <h2>👑 Owner Dashboard</h2>
+    <div class="owner-dashboard">
 
-      <p>
-        You are authenticated as an authorized GCRP staff member.
-      </p>
+      <h2>👑 Management Access</h2>
 
       <p id="admin-status">
-        GCRP Owner access confirmed.
+        Checking your access...
       </p>
 
     </div>
 
   </main>
 
-  <script src="Script.js"></script>
+
+  <!-- SUPABASE -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- GCRP CONFIG + DASHBOARD -->
+
+  <script src="script.js"></script>
+  <script src="admin-dashboard.js"></script>
 
 </body>
 </html>
