@@ -126,3 +126,59 @@ footer{padding:35px 5%;border-top:1px solid var(--line);display:flex;align-items
   font-size: 25px;
   cursor: pointer;
 }
+
+/* ==========================================
+   GCRP ADMIN DASHBOARD
+========================================== */
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin: 35px 0 45px;
+}
+
+.stat-card {
+  padding: 25px;
+  border-radius: 16px;
+  background: rgba(10, 18, 28, 0.8);
+  border: 1px solid rgba(0, 191, 255, 0.25);
+}
+
+.stat-card span {
+  font-size: 25px;
+}
+
+.stat-card h2 {
+  font-size: 32px;
+  margin: 12px 0 4px;
+}
+
+.stat-card p {
+  margin: 0;
+  color: #9aa8b8;
+}
+
+.owner-dashboard {
+  margin-top: 45px;
+  padding: 30px;
+  border: 1px solid rgba(0, 191, 255, 0.4);
+  border-radius: 18px;
+  background: rgba(10, 18, 28, 0.5);
+}
+
+@media (max-width: 850px) {
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+}
+
+@media (max-width: 500px) {
+
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+}
