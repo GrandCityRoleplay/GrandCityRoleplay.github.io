@@ -29,19 +29,21 @@ async function checkAdminAccess() {
 
     const {
       data: { session },
-      error
+      error: sessionError
     } =
       await supabaseClient.auth.getSession();
 
 
-    if (error || !session) {
+    // USER IS NOT LOGGED IN
 
-      if (status) {
+    if (sessionError || !session) {
 
-        status.textContent =
-          "❌ You must log in to access the Admin Panel.";
+      console.log(
+        "Admin access denied: No active session."
+      );
 
-      }
+      window.location.href =
+        "index.html";
 
       return;
     }
@@ -51,65 +53,82 @@ async function checkAdminAccess() {
       session.user;
 
 
+    // LOAD USER PROFILE
+
     const {
       data: profile,
       error: profileError
     } =
       await supabaseClient
         .from("profiles")
-        .select("username, display_name, role")
-        .eq("id", user.id)
+        .select(
+          "username, display_name, role"
+        )
+        .eq(
+          "id",
+          user.id
+        )
         .maybeSingle();
 
 
-    if (profileError) {
+    if (profileError || !profile) {
 
       console.error(
         "Profile loading error:",
         profileError
       );
 
+      window.location.href =
+        "index.html";
+
       return;
     }
 
 
     const role =
-      profile?.role;
+      profile.role;
 
+
+    // ==========================================
+    // ALLOWED ADMIN ROLES
+    // ==========================================
 
     const allowedRoles = [
 
       "owner",
+
       "chief_admin",
+
       "admin"
 
     ];
 
 
-    if (!allowedRoles.includes(role)) {
+    // ACCESS DENIED
 
-      if (status) {
+    if (
+      !allowedRoles.includes(role)
+    ) {
 
-        status.textContent =
-          "❌ You do not have permission to access this panel.";
+      console.log(
+        "Admin access denied for role:",
+        role
+      );
 
-      }
-
-
-      if (welcome) {
-
-        welcome.textContent =
-          "Access denied.";
-
-      }
+      window.location.href =
+        "index.html";
 
       return;
     }
 
 
+    // ==========================================
+    // ACCESS GRANTED
+    // ==========================================
+
     const name =
-      profile?.display_name ||
-      profile?.username ||
+      profile.display_name ||
+      profile.username ||
       "Administrator";
 
 
@@ -117,21 +136,26 @@ async function checkAdminAccess() {
 
       welcome.textContent =
         `Welcome back, ${name}.`;
-
     }
 
 
     if (status) {
 
       status.textContent =
-        `🟢 Authorized as ${role}.`;
-
+        `👑 Management access granted — ${role}.`;
     }
 
 
-    // LOAD DASHBOARD DATA
+    console.log(
+      "Admin access granted:",
+      name,
+      role
+    );
 
-    loadDashboardStats();
+
+    // LOAD DASHBOARD STATISTICS
+
+    await loadDashboardStats();
 
 
   } catch (error) {
@@ -141,6 +165,8 @@ async function checkAdminAccess() {
       error
     );
 
+    window.location.href =
+      "index.html";
   }
 
 }
@@ -158,7 +184,8 @@ async function loadDashboardStats() {
     // ACTIVE STAFF
 
     const {
-      count: staffCount
+      count: staffCount,
+      error: staffError
     } =
       await supabaseClient
         .from("staff")
@@ -178,7 +205,8 @@ async function loadDashboardStats() {
     // TOTAL COMPLAINTS
 
     const {
-      count: complaintCount
+      count: complaintCount,
+      error: complaintError
     } =
       await supabaseClient
         .from("complaints")
@@ -194,7 +222,8 @@ async function loadDashboardStats() {
     // PENDING COMPLAINTS
 
     const {
-      count: pendingCount
+      count: pendingCount,
+      error: pendingError
     } =
       await supabaseClient
         .from("complaints")
@@ -214,7 +243,8 @@ async function loadDashboardStats() {
     // SERVER LINKS
 
     const {
-      count: serverCount
+      count: serverCount,
+      error: serverError
     } =
       await supabaseClient
         .from("server_links")
@@ -227,30 +257,88 @@ async function loadDashboardStats() {
         );
 
 
+    // LOG ANY DATABASE ERRORS
+
+    if (staffError) {
+      console.error(
+        "Staff count error:",
+        staffError
+      );
+    }
+
+    if (complaintError) {
+      console.error(
+        "Complaint count error:",
+        complaintError
+      );
+    }
+
+    if (pendingError) {
+      console.error(
+        "Pending count error:",
+        pendingError
+      );
+    }
+
+    if (serverError) {
+      console.error(
+        "Server links count error:",
+        serverError
+      );
+    }
+
+
+    // ==========================================
     // DISPLAY RESULTS
+    // ==========================================
 
-    document.getElementById(
-      "staff-count"
-    ).textContent =
-      staffCount ?? 0;
+    const staffElement =
+      document.getElementById(
+        "staff-count"
+      );
+
+    const complaintElement =
+      document.getElementById(
+        "complaint-count"
+      );
+
+    const pendingElement =
+      document.getElementById(
+        "pending-count"
+      );
+
+    const serverElement =
+      document.getElementById(
+        "server-count"
+      );
 
 
-    document.getElementById(
-      "complaint-count"
-    ).textContent =
-      complaintCount ?? 0;
+    if (staffElement) {
+
+      staffElement.textContent =
+        staffCount ?? 0;
+    }
 
 
-    document.getElementById(
-      "pending-count"
-    ).textContent =
-      pendingCount ?? 0;
+    if (complaintElement) {
+
+      complaintElement.textContent =
+        complaintCount ?? 0;
+    }
 
 
-    document.getElementById(
-      "server-count"
-    ).textContent =
-      serverCount ?? 0;
+    if (pendingElement) {
+
+      pendingElement.textContent =
+        pendingCount ?? 0;
+    }
+
+
+    if (serverElement) {
+
+      serverElement.textContent =
+        serverCount ?? 0;
+    }
 
 
   } catch (error) {
