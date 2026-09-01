@@ -1,16 +1,33 @@
-const SUPABASE_URL = "https://vjvgvjdmwtmpefuwxtun.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Ev-ZZXUY3oY9rbkMHH65Dw_ashMFtNe";
+const SUPABASE_URL =
+  "https://vjvgvjdmwtmpefuwxtun.supabase.co";
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const SUPABASE_KEY =
+  "sb_publishable_Ev-ZZXUY3oY9rbkMHH65Dw_ashMFtNe";
 
-const staffSelect = document.getElementById("staff-select");
-const positionSelect = document.getElementById("position-select");
-const saveButton = document.getElementById("save-position");
-const message = document.getElementById("permissions-message");
 
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+const staffSelect =
+  document.getElementById("staff-select");
+
+const positionSelect =
+  document.getElementById("position-select");
+
+const saveButton =
+  document.getElementById("save-position");
+
+const message =
+  document.getElementById("permissions-message");
+
+
+// ==========================================
+// LOAD STAFF
+// ==========================================
 
 async function loadStaff() {
 
@@ -19,99 +36,253 @@ async function loadStaff() {
   staffSelect.innerHTML =
     '<option value="">Loading staff...</option>';
 
-  const { data, error } = await supabaseClient
-    .from("staff")
-    .select("id,user_id,position,active")
-    .order("created_at", { ascending: true });
+
+  const {
+    data: staff,
+    error
+  } =
+    await supabaseClient
+      .from("staff")
+      .select(
+        "user_id, position, active"
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
 
   if (error) {
-    console.error("Failed to load staff:", error);
+
+    console.error(error);
 
     staffSelect.innerHTML =
       '<option value="">Unable to load staff</option>';
 
     return;
+
   }
 
-  if (!data || data.length === 0) {
+
+  if (!staff || staff.length === 0) {
+
     staffSelect.innerHTML =
       '<option value="">No staff members found</option>';
 
     return;
+
   }
+
+
+  const userIds =
+    staff.map(
+      member =>
+        member.user_id
+    );
+
+
+  const {
+    data: profiles,
+    error: profileError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "id, username, display_name"
+      )
+      .in(
+        "id",
+        userIds
+      );
+
+
+  if (profileError) {
+
+    console.error(
+      profileError
+    );
+
+  }
+
+
+  const profileMap = {};
+
+
+  (profiles || []).forEach(
+    profile => {
+
+      profileMap[
+        profile.id
+      ] =
+        profile;
+
+    }
+  );
+
 
   staffSelect.innerHTML =
     '<option value="">Select a staff member</option>';
 
-  data.forEach(staff => {
 
-    const option = document.createElement("option");
+  staff.forEach(
+    member => {
 
-    option.value = staff.id;
+      const profile =
+        profileMap[
+          member.user_id
+        ];
 
-    option.textContent =
-      `${staff.user_id} — ${staff.position || "No position"}${
-        staff.active ? "" : " (Inactive)"
-      }`;
 
-    staffSelect.appendChild(option);
-  });
+      const name =
+        profile?.display_name ||
+        profile?.username ||
+        "Unknown Staff";
+
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+
+      option.value =
+        member.user_id;
+
+
+      option.textContent =
+        `${name} — ${member.position || "No Position"}`;
+
+
+      staffSelect.appendChild(
+        option
+      );
+
+    }
+  );
+
 }
 
 
-async function savePosition() {
+// ==========================================
+// CHANGE STAFF POSITION
+// ==========================================
 
-  const staffId = staffSelect.value;
-  const newPosition = positionSelect.value;
+async function changePosition() {
 
-  if (!staffId) {
-    message.textContent =
-      "⚠️ Please select a staff member.";
-    return;
-  }
+  const userId =
+    staffSelect?.value;
 
-  if (!newPosition) {
-    message.textContent =
-      "⚠️ Please select a position.";
-    return;
-  }
+  const position =
+    positionSelect?.value;
 
-  saveButton.disabled = true;
-  message.textContent = "Saving...";
 
-  const { error } = await supabaseClient
-    .from("staff")
-    .update({
-      position: newPosition
-    })
-    .eq("id", staffId);
-
-  if (error) {
-
-    console.error("Position update failed:", error);
+  if (!userId) {
 
     message.textContent =
-      "❌ Could not update the position. Check Supabase permissions.";
+      "⚠️ Select a staff member.";
 
-    saveButton.disabled = false;
     return;
+
   }
+
+
+  if (!position) {
+
+    message.textContent =
+      "⚠️ Select a new position.";
+
+    return;
+
+  }
+
+
+  saveButton.disabled =
+    true;
+
 
   message.textContent =
-    `✅ Position changed to ${newPosition}.`;
+    "Updating staff position...";
 
-  await loadStaff();
 
-  saveButton.disabled = false;
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("staff")
+        .update({
+
+          position:
+            position
+
+        })
+        .eq(
+          "user_id",
+          userId
+        );
+
+
+    if (error) {
+
+      console.error(error);
+
+      message.textContent =
+        "❌ Could not update position.";
+
+      saveButton.disabled =
+        false;
+
+      return;
+
+    }
+
+
+    message.textContent =
+      `✅ Position changed to ${position}.`;
+
+
+    positionSelect.value =
+      "";
+
+
+    await loadStaff();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "❌ Something went wrong.";
+
+  }
+
+
+  saveButton.disabled =
+    false;
+
 }
 
+
+// ==========================================
+// EVENT LISTENER
+// ==========================================
 
 if (saveButton) {
+
   saveButton.addEventListener(
     "click",
-    savePosition
+    changePosition
   );
+
 }
 
+
+// ==========================================
+// START
+// ==========================================
 
 loadStaff();
