@@ -12,6 +12,22 @@ const supabaseClient =
 
 
 // ==========================================
+// ESCAPE HTML
+// ==========================================
+
+function escapeHtml(value) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent =
+    value ?? "";
+
+  return div.innerHTML;
+}
+
+
+// ==========================================
 // LOAD REGISTERED USERS
 // ==========================================
 
@@ -22,20 +38,29 @@ async function loadUsers() {
 
   if (!select) return;
 
+
   select.innerHTML =
     '<option value="">Loading users...</option>';
+
 
   try {
 
     const {
       data: users,
       error
-    } = await supabaseClient
-      .from("profiles")
-      .select("id, username, display_name")
-      .order("username", {
-        ascending: true
-      });
+    } =
+      await supabaseClient
+        .from("profiles")
+        .select(
+          "id, username, display_name"
+        )
+        .order(
+          "username",
+          {
+            ascending: true
+          }
+        );
+
 
     if (error) {
 
@@ -50,41 +75,58 @@ async function loadUsers() {
       return;
     }
 
+
     if (!users || users.length === 0) {
 
       select.innerHTML =
-        '<option value="">No registered users</option>';
+        '<option value="">No registered users found</option>';
 
       return;
     }
 
+
     select.innerHTML =
       '<option value="">Select a user</option>';
+
 
     users.forEach(user => {
 
       const option =
         document.createElement("option");
 
-      option.value = user.id;
+
+      option.value =
+        user.id;
+
+
+      const name =
+        user.display_name ||
+        user.username ||
+        "Unknown User";
+
 
       option.textContent =
-        `${user.display_name || user.username} (@${user.username})`;
+        `${name} (@${user.username || "unknown"})`;
+
 
       select.appendChild(option);
 
     });
 
+
   } catch (error) {
 
     console.error(
-      "GCRP user loading failed:",
+      "User loading failed:",
       error
     );
 
+
     select.innerHTML =
       '<option value="">Unable to load users</option>';
+
   }
+
 }
 
 
@@ -95,91 +137,131 @@ async function loadUsers() {
 async function addStaffMember() {
 
   const userSelect =
-    document.getElementById("user-select");
+    document.getElementById(
+      "user-select"
+    );
+
 
   const message =
     document.getElementById(
       "staff-management-message"
     );
 
+
   const button =
     document.getElementById(
       "add-staff-button"
     );
 
-  if (!userSelect || !message) return;
+
+  if (
+    !userSelect ||
+    !message ||
+    !button
+  ) return;
+
 
   const userId =
     userSelect.value;
 
+
   if (!userId) {
 
     message.textContent =
-      "⚠️ Please select a user.";
+      "⚠️ Please select a registered user.";
 
     return;
+
   }
 
-  button.disabled = true;
+
+  button.disabled =
+    true;
+
 
   message.textContent =
     "Adding staff member...";
 
+
   try {
 
     const {
-      data: { user },
+      data: {
+        user
+      },
       error: userError
     } =
-      await supabaseClient.auth.getUser();
+      await supabaseClient
+        .auth
+        .getUser();
 
-    if (userError || !user) {
+
+    if (
+      userError ||
+      !user
+    ) {
 
       message.textContent =
         "❌ You must be logged in.";
 
-      button.disabled = false;
+      button.disabled =
+        false;
 
       return;
+
     }
 
+
+    // Check if already staff
 
     const {
       data: existingStaff,
-      error: existingError
+      error: checkError
     } =
       await supabaseClient
         .from("staff")
-        .select("user_id, position, active")
-        .eq("user_id", userId);
+        .select(
+          "user_id"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .maybeSingle();
 
 
-    if (existingError) {
+    if (checkError) {
 
-      console.error(existingError);
+      console.error(
+        checkError
+      );
+
 
       message.textContent =
-        "❌ Could not check existing staff.";
+        "❌ Could not check staff records.";
 
-      button.disabled = false;
+      button.disabled =
+        false;
 
       return;
+
     }
 
 
-    if (
-      existingStaff &&
-      existingStaff.length > 0
-    ) {
+    if (existingStaff) {
 
       message.textContent =
         "⚠️ This user is already a staff member.";
 
-      button.disabled = false;
+      button.disabled =
+        false;
 
       return;
+
     }
 
+
+    // Add staff
 
     const {
       error: insertError
@@ -187,10 +269,19 @@ async function addStaffMember() {
       await supabaseClient
         .from("staff")
         .insert({
-          user_id: userId,
-          position: "Moderator",
-          assigned_by: user.id,
-          active: true
+
+          user_id:
+            userId,
+
+          position:
+            "Moderator",
+
+          assigned_by:
+            user.id,
+
+          active:
+            true
+
         });
 
 
@@ -201,35 +292,148 @@ async function addStaffMember() {
         insertError
       );
 
-      message.textContent =
-        "❌ Could not add staff member. Check Supabase permissions.";
 
-      button.disabled = false;
+      message.textContent =
+        "❌ Could not add staff member.";
+
+      button.disabled =
+        false;
 
       return;
+
     }
 
 
     message.textContent =
-      "✅ Staff member added as Moderator.";
+      "✅ Staff member added successfully as Moderator.";
 
-    userSelect.value = "";
+
+    userSelect.value =
+      "";
+
 
     await loadStaffManagement();
+
 
   } catch (error) {
 
     console.error(
-      "GCRP Add Staff error:",
+      "Add staff error:",
       error
     );
+
 
     message.textContent =
       "❌ Something went wrong.";
 
   }
 
-  button.disabled = false;
+
+  button.disabled =
+    false;
+
+}
+
+
+// ==========================================
+// TOGGLE STAFF STATUS
+// ==========================================
+
+async function toggleStaffStatus(
+  userId,
+  currentStatus
+) {
+
+  const newStatus =
+    !currentStatus;
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("staff")
+      .update({
+
+        active:
+          newStatus
+
+      })
+      .eq(
+        "user_id",
+        userId
+      );
+
+
+  if (error) {
+
+    console.error(
+      error
+    );
+
+
+    alert(
+      "❌ Could not update staff status."
+    );
+
+    return;
+
+  }
+
+
+  await loadStaffManagement();
+
+}
+
+
+// ==========================================
+// REMOVE STAFF
+// ==========================================
+
+async function removeStaff(
+  userId
+) {
+
+  const confirmed =
+    confirm(
+      "Are you sure you want to remove this staff member?"
+    );
+
+
+  if (!confirmed)
+    return;
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("staff")
+      .delete()
+      .eq(
+        "user_id",
+        userId
+      );
+
+
+  if (error) {
+
+    console.error(
+      error
+    );
+
+
+    alert(
+      "❌ Could not remove staff member."
+    );
+
+    return;
+
+  }
+
+
+  await loadStaffManagement();
+
 }
 
 
@@ -244,7 +448,10 @@ async function loadStaffManagement() {
       "staff-management-list"
     );
 
-  if (!container) return;
+
+  if (!container)
+    return;
+
 
   container.innerHTML =
     "<p>Loading staff members...</p>";
@@ -259,11 +466,15 @@ async function loadStaffManagement() {
       await supabaseClient
         .from("staff")
         .select(
-          "user_id, position, assigned_by, active, created_at"
+          "user_id, position, active, created_at"
         )
-        .order("created_at", {
-          ascending: true
-        });
+        .order(
+          "created_at",
+          {
+            ascending:
+              true
+          }
+        );
 
 
     if (staffError) {
@@ -273,25 +484,32 @@ async function loadStaffManagement() {
         staffError
       );
 
+
       container.innerHTML =
         "<p>❌ Unable to load staff members.</p>";
 
       return;
+
     }
 
 
-    if (!staff || staff.length === 0) {
+    if (
+      !staff ||
+      staff.length === 0
+    ) {
 
       container.innerHTML =
         "<p>📭 No staff members found.</p>";
 
       return;
+
     }
 
 
     const userIds =
       staff.map(
-        member => member.user_id
+        member =>
+          member.user_id
       );
 
 
@@ -304,7 +522,10 @@ async function loadStaffManagement() {
         .select(
           "id, username, display_name"
         )
-        .in("id", userIds);
+        .in(
+          "id",
+          userIds
+        );
 
 
     if (profileError) {
@@ -313,87 +534,211 @@ async function loadStaffManagement() {
         "Profile loading error:",
         profileError
       );
+
     }
 
 
-    const profileMap = {};
+    const profileMap =
+      {};
 
 
-    (profiles || []).forEach(profile => {
+    (profiles || []).forEach(
+      profile => {
 
-      profileMap[profile.id] =
-        profile;
+        profileMap[
+          profile.id
+        ] =
+          profile;
 
-    });
+      }
+    );
 
 
     container.innerHTML =
-      staff.map(member => {
+      staff.map(
+        member => {
 
-        const profile =
-          profileMap[member.user_id];
-
-
-        const name =
-          profile?.display_name ||
-          profile?.username ||
-          "Unknown Staff";
+          const profile =
+            profileMap[
+              member.user_id
+            ];
 
 
-        const username =
-          profile?.username ||
-          "Unknown";
+          const name =
+            profile?.display_name ||
+            profile?.username ||
+            "Unknown Staff";
 
 
-        const active =
-          member.active === true;
+          const username =
+            profile?.username ||
+            "Unknown";
 
 
-        // Owner protection
-        const isOwner =
-          member.position === "Owner";
+          const active =
+            member.active ===
+            true;
 
 
-        return `
-          <div style="
-            margin:20px 0;
-            padding:25px;
-            border:1px solid rgba(0,191,255,.4);
-            border-radius:18px;
-          ">
+          const isOwner =
+            member.position ===
+            "Owner";
 
-            <h2>
-              👤 ${escapeHtml(name)}
-            </h2>
 
-            <p>
-              <strong>Username:</strong>
-              ${escapeHtml(username)}
-            </p>
+          const date =
+            member.created_at
+              ? new Date(
+                  member.created_at
+                ).toLocaleDateString()
+              : "Unknown";
 
-            <p>
-              <strong>Position:</strong>
-              ${escapeHtml(
-                member.position || "No position"
-              )}
-            </p>
 
-            <p>
-              <strong>Status:</strong>
-              ${
-                active
-                  ? "🟢 Active"
-                  : "🔴 Inactive"
-              }
-            </p>
+          return `
 
-            <p>
-              <strong>User ID:</strong>
-              ${escapeHtml(member.user_id)}
-            </p>
+<div style="
+  margin:20px 0;
+  padding:25px;
+  border:1px solid rgba(0,191,255,.4);
+  border-radius:18px;
+">
 
-            <p>
-              <strong>Added:</strong>
-              ${
-                member.created_at
-                  ? new Date(
+  <h2>
+    👤 ${escapeHtml(name)}
+  </h2>
+
+
+  <p>
+    <strong>Username:</strong>
+    ${escapeHtml(username)}
+  </p>
+
+
+  <p>
+    <strong>Position:</strong>
+    ${escapeHtml(
+      member.position ||
+      "No position"
+    )}
+  </p>
+
+
+  <p>
+    <strong>Status:</strong>
+
+    ${
+      active
+        ? "🟢 Active"
+        : "🔴 Inactive"
+    }
+
+  </p>
+
+
+  <p>
+    <strong>Added:</strong>
+    ${escapeHtml(date)}
+  </p>
+
+
+  ${
+    isOwner
+      ? `
+
+        <p>
+          👑 Owner account protected.
+        </p>
+
+      `
+
+      : `
+
+<div style="
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:20px;
+">
+
+<button
+  onclick='toggleStaffStatus(
+    "${member.user_id}",
+    ${active}
+  )'
+>
+
+${
+  active
+    ? "🔴 Deactivate"
+    : "🟢 Activate"
+}
+
+</button>
+
+
+<button
+  onclick='removeStaff(
+    "${member.user_id}"
+  )'
+>
+
+🗑️ Remove
+
+</button>
+
+</div>
+
+      `
+  }
+
+</div>
+
+          `;
+
+        }
+      )
+      .join("");
+
+
+  } catch (error) {
+
+    console.error(
+      "Staff management error:",
+      error
+    );
+
+
+    container.innerHTML =
+      "<p>❌ Something went wrong while loading staff.</p>";
+
+  }
+
+}
+
+
+// ==========================================
+// EVENT LISTENER
+// ==========================================
+
+const addStaffButton =
+  document.getElementById(
+    "add-staff-button"
+  );
+
+
+if (addStaffButton) {
+
+  addStaffButton.addEventListener(
+    "click",
+    addStaffMember
+  );
+
+}
+
+
+// ==========================================
+// START
+// ==========================================
+
+loadUsers();
+
+loadStaffManagement();
